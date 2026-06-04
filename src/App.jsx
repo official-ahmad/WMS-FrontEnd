@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import Inventory from "./pages/Inventory";
 import AddProduct from "./pages/AddProduct";
 import Transactions from "./pages/Transactions";
+import Reports from "./pages/Reports";
 import ProductHistory from "./pages/ProductHistory";
 import Users from "./pages/Users";
 import ActivityLogs from "./pages/ActivityLogs";
@@ -37,6 +38,7 @@ function App() {
                       <Route path="/inventory" element={<Inventory />} />
                       <Route path="/add-product" element={<AddProduct />} />
                       <Route path="/transactions" element={<Transactions />} />
+                      <Route path="/reports" element={<Reports />} />
                       <Route
                         path="/product-history"
                         element={<ProductHistory />}
@@ -52,7 +54,6 @@ function App() {
           </Routes>
         </Router>
 
-        {/* 👇 Yeh lagana zaroori tha pure layout ke liye */}
         <Toaster
           position="center-top"
           reverseOrder={false}

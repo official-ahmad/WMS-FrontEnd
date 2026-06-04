@@ -12,6 +12,7 @@ import {
   Trash2,
   Users as UsersIcon,
   History,
+  BarChart3,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
@@ -46,6 +47,12 @@ export default function Sidebar() {
       items: [
         { name: "Transactions", path: "/transactions", icon: ArrowRightLeft },
         { name: "Product History", path: "/product-history", icon: Trash2 },
+      ],
+    },
+    {
+      group: "Reports",
+      items: [
+        { name: "Analytics", path: "/reports", icon: BarChart3 },
       ],
     },
     {
