@@ -7,18 +7,21 @@ import {
   Trash2,
 } from "lucide-react";
 import axiosInstance from "../api/axiosInstance";
+import { RangeSwitch } from "../components/WarehouseControls";
+import WarehouseLoader from "../components/WarehouseLoader";
 
 export default function ProductHistory() {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [range, setRange] = useState("week");
 
   useEffect(() => {
     const fetchHistory = async () => {
       try {
         setLoading(true);
         const response = await axiosInstance.get(
-          "/api/products/history/deleted",
+          "/products/history/deleted",
         );
         setHistory(response.data);
       } catch (err) {
@@ -42,15 +45,17 @@ export default function ProductHistory() {
     });
   };
 
+  const rangeStart = new Date();
+  const rangeDays = { day: 1, week: 7, month: 30, year: 365 }[range];
+  rangeStart.setDate(rangeStart.getDate() - rangeDays);
+  const filteredHistory = history.filter(
+    (item) => new Date(item.deletedAt) >= rangeStart,
+  );
+
   if (loading) {
     return (
       <div className="lg:ml-64 min-h-screen bg-gray-50 p-4 md:p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin mb-4">
-            <Package className="text-blue-600" size={48} />
-          </div>
-          <p className="text-gray-600">Loading product history...</p>
-        </div>
+        <WarehouseLoader label="Loading product history..." />
       </div>
     );
   }
@@ -72,6 +77,10 @@ export default function ProductHistory() {
       </div>
 
       <div className="p-4 md:p-8">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <p className="text-sm text-gray-500">Filter history by time range</p>
+          <RangeSwitch value={range} onChange={setRange} />
+        </div>
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-red-700">{error}</p>
@@ -106,7 +115,7 @@ export default function ProductHistory() {
 
               <tbody className="divide-y divide-gray-100">
                 {history.length > 0 ? (
-                  history.map((item) => (
+                  filteredHistory.map((item) => (
                     <tr
                       key={item._id}
                       className="hover:bg-gray-50 transition-colors"
@@ -186,7 +195,7 @@ export default function ProductHistory() {
 
           <div className="bg-gray-50 px-4 md:px-6 py-3 border-t border-gray-100">
             <p className="text-xs md:text-sm text-gray-600">
-              Showing <span className="font-medium">{history.length}</span>{" "}
+              Showing <span className="font-medium">{filteredHistory.length}</span>{" "}
               deleted products
             </p>
           </div>

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { LogIn } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
+import WarehouseLoader from "../components/WarehouseLoader";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -80,8 +81,7 @@ export default function Login() {
             >
               {loading ? (
                 <>
-                  <div className="animate-spin w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
-                  Signing in...
+                  <WarehouseLoader label="Signing in..." compact />
                 </>
               ) : (
                 <>

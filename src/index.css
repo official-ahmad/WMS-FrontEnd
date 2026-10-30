@@ -1,1 +1,134 @@
 @import "tailwindcss";
+
+.warehouse-photo-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  width: 172px;
+  padding: 9px 12px;
+  border-radius: 20px;
+  background: #ff2849;
+  color: #fff;
+  cursor: pointer;
+  font: 500 15px/22px sans-serif;
+  letter-spacing: 0.4px;
+  transition: background 0.2s ease;
+}
+
+.warehouse-photo-button:hover { background: #e52441; }
+.warehouse-photo-button:hover svg { animation: warehouse-flicker 2s linear infinite; }
+.warehouse-photo-button input { display: none; }
+
+.warehouse-download-button {
+  display: inline-block;
+  width: 10em;
+  padding: 1em;
+  border: 0;
+  border-radius: 7px;
+  background: #1875ff;
+  color: #fff;
+  box-shadow: 0 14px 56px -11px #1875ff;
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+}
+
+.warehouse-download-button span { display: inline-block; transition: 0.4s; }
+.warehouse-download-button span::after {
+  content: "for free";
+  opacity: 0;
+  position: absolute;
+  margin-left: 4px;
+  transition: 0.7s;
+}
+.warehouse-download-button:hover span { padding-right: 3.55em; }
+.warehouse-download-button:hover span::after { opacity: 1; }
+
+.warehouse-range-switch {
+  display: inline-flex;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid #e3e8ee;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 20px 40px -24px rgba(14, 17, 22, 0.18);
+}
+.warehouse-range-switch button {
+  height: 36px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #5b6472;
+  cursor: pointer;
+  font-size: 14px;
+}
+.warehouse-range-switch button.is-active {
+  background: #0e1116;
+  color: #fff;
+  box-shadow: 0 8px 18px -10px rgba(14, 17, 22, 0.5);
+}
+
+.warehouse-loader-wrap {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 4px;
+  color: #475569;
+}
+.warehouse-loader-wrap p { margin: 0; font-size: 14px; }
+.warehouse-loader-wrap--compact {
+  min-height: 0;
+  flex-direction: row;
+  gap: 8px;
+  color: #fff;
+}
+.warehouse-loader-wrap--compact .warehouse-loader {
+  transform: scale(0.35);
+  transform-origin: center;
+  width: 30px;
+  height: 24px;
+  margin: -8px;
+}
+.warehouse-loader-wrap--compact p { font-size: 14px; }
+.warehouse-loader {
+  position: relative;
+  width: 76px;
+  height: 62px;
+}
+.warehouse-loader__cloud {
+  position: absolute;
+  right: 7px;
+  bottom: 8px;
+  left: 7px;
+  height: 30px;
+  border-radius: 24px;
+  background: #4387f4;
+  filter: drop-shadow(0 4px 8px rgba(67, 135, 244, 0.35));
+}
+.warehouse-loader__cloud span {
+  position: absolute;
+  bottom: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #4387f4;
+}
+.warehouse-loader__cloud span:first-child { left: 4px; }
+.warehouse-loader__cloud span:nth-child(2) { left: 23px; bottom: 19px; width: 38px; height: 38px; }
+.warehouse-loader__cloud span:last-child { right: 4px; }
+.warehouse-loader__arrows {
+  position: absolute;
+  inset: 4px 0 auto;
+  color: #80b1ff;
+  font-size: 36px;
+  line-height: 1;
+  text-align: center;
+  animation: warehouse-rotation 1s linear infinite;
+}
+@keyframes warehouse-rotation { to { transform: rotate(360deg); } }
+@keyframes warehouse-flicker { 54%, 92%, 96%, 99% { opacity: 0; } }

@@ -9,14 +9,23 @@ import {
   DollarSign,
   Boxes,
   ShieldAlert,
+  Upload,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { addProduct } from "../api";
+import {
+  addProduct,
+  confirmProductsImport,
+  previewProductsImport,
+} from "../api";
 import toast from "react-hot-toast";
+import { PhotoButton } from "../components/WarehouseControls";
 
 export default function AddProduct() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importPreview, setImportPreview] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState("");
 
   const formRef = useRef({
     name: "",
@@ -26,6 +35,18 @@ export default function AddProduct() {
     quantity: "",
     price: "",
     lowStockThreshold: "10",
+    costPrice: "",
+    reorderQuantity: "0",
+    expiryDate: "",
+    brand: "",
+    barcode: "",
+    supplier: "",
+    unit: "pcs",
+    location: "",
+    bin: "",
+    batchNumber: "",
+    weight: "",
+    dimensions: "",
   });
 
   const categories = [
@@ -43,6 +64,11 @@ export default function AddProduct() {
     formRef.current[name] = value;
   };
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) setPhotoPreview(URL.createObjectURL(file));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = formRef.current;
@@ -51,8 +77,8 @@ export default function AddProduct() {
       !data.name ||
       !data.SKU ||
       !data.category ||
-      !data.quantity ||
-      !data.price
+      data.quantity === "" ||
+      data.price === ""
     ) {
       toast.error("Please fill in all required fields!");
       return;
@@ -64,7 +90,10 @@ export default function AddProduct() {
         ...data,
         quantity: parseInt(data.quantity),
         price: parseFloat(data.price),
+        costPrice: data.costPrice === "" ? 0 : parseFloat(data.costPrice),
         lowStockThreshold: parseInt(data.lowStockThreshold),
+        reorderQuantity: data.reorderQuantity === "" ? 0 : parseInt(data.reorderQuantity),
+        weight: data.weight === "" ? null : parseFloat(data.weight),
       });
 
       toast.success("Product successfully added to catalog!");
@@ -73,6 +102,59 @@ export default function AddProduct() {
       toast.error(err.response?.data?.error || "Failed to add product");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const supported = /\.(xlsx|xls|csv|pdf|docx)$/i.test(file.name);
+    if (!supported) {
+      toast.error("Only PDF, DOCX, XLSX, XLS, or CSV files are supported");
+      return;
+    }
+
+    try {
+      setImporting(true);
+      const response = await previewProductsImport(file);
+      setImportPreview(response.data);
+      if (response.data.canImport) {
+        toast.success(`${response.data.count} products ready for review`);
+      } else {
+        toast.error("Preview has validation errors. Fix the file before importing.");
+      }
+    } catch (error) {
+      const details = error.response?.data?.details;
+      toast.error(
+        details?.length
+          ? `${error.response?.data?.error}: ${details.slice(0, 3).join(" | ")}${details.length > 3 ? ` (+${details.length - 3} more)` : ""}`
+          : error.response?.data?.error || "Product import failed",
+      );
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!importPreview?.canImport) return;
+    try {
+      setImporting(true);
+      const response = await confirmProductsImport(
+        importPreview.rows,
+        importPreview.fileName,
+      );
+      toast.success(response.data.message);
+      setImportPreview(null);
+      setTimeout(() => navigate("/inventory"), 1200);
+    } catch (error) {
+      toast.error(
+        error.response?.data?.details?.join(" | ") ||
+          error.response?.data?.error ||
+          "Import confirmation failed",
+      );
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -102,6 +184,102 @@ export default function AddProduct() {
 
       <div className="p-6 md:p-10">
         <div className="max-w-4xl mx-auto">
+          <div className="mb-8 bg-blue-950 text-white rounded-2xl p-6 shadow-lg">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <h2 className="font-bold text-lg flex items-center gap-2">
+                  <Upload size={20} className="text-blue-300" /> Bulk Product Import
+                </h2>
+                <p className="text-blue-200 text-sm mt-1">
+                  Upload XLSX/CSV with headers, or PDF/DOCX using `Field: Value`
+                  product blocks.
+                </p>
+                <p className="text-blue-300 text-xs mt-2">
+                  Required: Product Name, SKU/Product ID, Category, Quantity,
+                  Selling Price
+                </p>
+              </div>
+              <label className="shrink-0 cursor-pointer px-5 py-3 bg-blue-500 hover:bg-blue-400 rounded-xl font-bold text-center transition-colors">
+                {importing ? "Preparing..." : "Choose File"}
+                <input
+                  type="file"
+                  accept=".xlsx,.xls,.csv,.pdf,.docx"
+                  onChange={handleImport}
+                  disabled={importing}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
+
+          {importPreview && (
+            <div className="mb-8 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100">
+                <div>
+                  <h2 className="font-bold text-lg text-slate-900">
+                    Import Preview
+                  </h2>
+                  <p className="text-sm text-slate-500">
+                    {importPreview.fileName} · {importPreview.count} rows
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setImportPreview(null)}
+                    className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmImport}
+                    disabled={!importPreview.canImport || importing}
+                    className="px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold disabled:opacity-50"
+                  >
+                    Confirm Import
+                  </button>
+                </div>
+              </div>
+              {importPreview.errors?.length > 0 && (
+                <div className="m-4 p-4 bg-rose-50 text-rose-700 rounded-xl text-sm">
+                  {importPreview.errors.slice(0, 5).map((error) => (
+                    <p key={error}>{error}</p>
+                  ))}
+                </div>
+              )}
+              <div className="overflow-x-auto max-h-80">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 sticky top-0">
+                    <tr>
+                      {["Name", "SKU", "Category", "Quantity", "Price"].map(
+                        (header) => (
+                          <th
+                            key={header}
+                            className="px-4 py-3 text-xs uppercase text-slate-500"
+                          >
+                            {header}
+                          </th>
+                        ),
+                      )}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {importPreview.rows?.slice(0, 100).map((row, index) => (
+                      <tr key={`${row.SKU || "row"}-${index}`}>
+                        <td className="px-4 py-3">{row.name || "—"}</td>
+                        <td className="px-4 py-3 font-mono">{row.SKU || "—"}</td>
+                        <td className="px-4 py-3">{row.category || "—"}</td>
+                        <td className="px-4 py-3">{row.quantity ?? "—"}</td>
+                        <td className="px-4 py-3">{row.price ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <form
             onSubmit={handleSubmit}
             className="grid grid-cols-1 lg:grid-cols-3 gap-8"
@@ -126,6 +304,60 @@ export default function AddProduct() {
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                     />
                   </div>
+                  <div className="flex flex-wrap items-center gap-4">
+                    <PhotoButton onChange={handlePhotoChange} />
+                    {photoPreview && (
+                      <img
+                        src={photoPreview}
+                        alt="Product preview"
+                        className="h-20 w-20 rounded-xl object-cover border border-slate-200"
+                      />
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {[
+                      ["brand", "Brand / Manufacturer"],
+                      ["barcode", "Barcode / GTIN"],
+                      ["supplier", "Supplier"],
+                      ["location", "Warehouse Zone"],
+                      ["bin", "Rack / Bin"],
+                      ["batchNumber", "Batch / Lot Number"],
+                      ["dimensions", "Dimensions (L × W × H)"],
+                    ].map(([name, label]) => (
+                      <div key={name}>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
+                          {label}
+                        </label>
+                        <input
+                          type="text"
+                          name={name}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        />
+                      </div>
+                    ))}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
+                        Unit
+                      </label>
+                      <select
+                        name="unit"
+                        defaultValue="pcs"
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none"
+                      >
+                        {["pcs", "box", "carton", "kg", "litre", "set"].map((unit) => (
+                          <option key={unit} value={unit}>{unit}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
+                        Weight
+                      </label>
+                      <input type="number" step="0.01" name="weight" onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" />
+                    </div>
+                  </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
@@ -138,6 +370,18 @@ export default function AddProduct() {
                       placeholder="Write details about product features, material, etc."
                       className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
+                      Cost Price ($)
+                    </label>
+                    <input type="number" step="0.01" name="costPrice" onChange={handleChange} placeholder="0.00" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">
+                      Expiry Date
+                    </label>
+                    <input type="date" name="expiryDate" onChange={handleChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none" />
                   </div>
                 </div>
               </div>

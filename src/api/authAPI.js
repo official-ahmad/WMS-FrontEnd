@@ -16,3 +16,10 @@ export const registerUser = async (email, password, firstName, lastName) => {
 export const logoutUser = async () => {
   return axiosInstance.post("/auth/logout");
 };
+
+export const changePassword = async (currentPassword, newPassword) => {
+  return axiosInstance.post("/auth/change-password", {
+    currentPassword,
+    newPassword,
+  });
+};

@@ -3,7 +3,6 @@ import {
   AlertCircle,
   Package,
   TrendingUp,
-  Download,
   Calendar,
   Filter,
 } from "lucide-react";
@@ -27,6 +26,8 @@ import {
 } from "chart.js";
 import jsPDF from "jspdf";
 import * as XLSX from "xlsx";
+import { DownloadButton } from "../components/WarehouseControls";
+import WarehouseLoader from "../components/WarehouseLoader";
 
 ChartJS.register(
   CategoryScale,
@@ -212,12 +213,7 @@ export default function Reports() {
   if (loading && !lowStockData) {
     return (
       <div className="lg:ml-64 min-h-screen bg-gray-50 p-4 md:p-8 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin mb-4">
-            <Package className="text-blue-600 mx-auto" size={48} />
-          </div>
-          <p className="text-gray-600">Loading reports...</p>
-        </div>
+        <WarehouseLoader label="Loading reports..." />
       </div>
     );
   }
@@ -311,20 +307,8 @@ export default function Reports() {
           </div>
 
           <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={exportToPDF}
-              className="px-4 py-2 bg-red-50 text-red-700 font-medium rounded-lg hover:bg-red-100 transition-colors flex items-center gap-2 text-sm"
-            >
-              <Download size={16} />
-              PDF
-            </button>
-            <button
-              onClick={exportToExcel}
-              className="px-4 py-2 bg-green-50 text-green-700 font-medium rounded-lg hover:bg-green-100 transition-colors flex items-center gap-2 text-sm"
-            >
-              <Download size={16} />
-              Excel
-            </button>
+            <DownloadButton onClick={exportToPDF}>Download PDF</DownloadButton>
+            <DownloadButton onClick={exportToExcel}>Download Excel</DownloadButton>
           </div>
         </div>
 

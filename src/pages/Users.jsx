@@ -10,6 +10,7 @@ import {
   Mail,
   Building2,
   X,
+  KeyRound,
 } from "lucide-react";
 import {
   getAllUsers,
@@ -18,6 +19,7 @@ import {
   deactivateUser,
 } from "../api/userAPI";
 import toast from "react-hot-toast";
+import { changePassword } from "../api/authAPI";
 
 export default function UserManagement() {
   // Component name changed for clarity
@@ -26,6 +28,12 @@ export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [changingPassword, setChangingPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     firstName: "",
@@ -116,6 +124,32 @@ export default function UserManagement() {
     setShowForm(false);
   };
 
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error("New passwords do not match");
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      await changePassword(
+        passwordForm.currentPassword,
+        passwordForm.newPassword,
+      );
+      setPasswordForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+      toast.success("Your password was changed successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.error || "Password change failed");
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const filteredUsers = users.filter(
     (user) =>
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -171,6 +205,76 @@ export default function UserManagement() {
       </div>
 
       <div className="p-6 md:p-10 max-w-7xl mx-auto">
+        <div className="mb-10 bg-slate-900 p-8 rounded-3xl shadow-xl shadow-slate-300/30 text-white">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="p-3 bg-blue-500/20 rounded-2xl text-blue-300">
+              <KeyRound size={24} />
+            </div>
+            <div>
+              <h2 className="text-xl font-black">Account Security</h2>
+              <p className="text-sm text-slate-300 mt-1">
+                Use at least 12 characters with uppercase, lowercase, a number,
+                and a special character.
+              </p>
+            </div>
+          </div>
+          <form
+            onSubmit={handlePasswordChange}
+            className="grid grid-cols-1 md:grid-cols-3 gap-4"
+          >
+            <input
+              type="password"
+              required
+              placeholder="Current password"
+              value={passwordForm.currentPassword}
+              onChange={(e) =>
+                setPasswordForm({
+                  ...passwordForm,
+                  currentPassword: e.target.value,
+                })
+              }
+              className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl outline-none focus:border-blue-400"
+            />
+            <input
+              type="password"
+              required
+              minLength={12}
+              placeholder="New password"
+              value={passwordForm.newPassword}
+              onChange={(e) =>
+                setPasswordForm({
+                  ...passwordForm,
+                  newPassword: e.target.value,
+                })
+              }
+              className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl outline-none focus:border-blue-400"
+            />
+            <div className="flex gap-3">
+              <input
+                type="password"
+                required
+                minLength={12}
+                placeholder="Confirm password"
+                value={passwordForm.confirmPassword}
+                onChange={(e) =>
+                  setPasswordForm({
+                    ...passwordForm,
+                    confirmPassword: e.target.value,
+                  })
+                }
+                className="min-w-0 flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl outline-none focus:border-blue-400"
+              />
+              <button
+                type="submit"
+                disabled={changingPassword}
+                className="px-5 py-3 bg-blue-500 rounded-xl font-bold hover:bg-blue-400 disabled:opacity-50"
+              >
+                {changingPassword ? "Saving..." : "Update"}
+              </button>
+            </div>
+          </form>
+        </div>
+
         {/* Form Section */}
         {showForm && (
           <div className="mb-10 bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/60 border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-300">
