@@ -1,5 +1,5 @@
 import { createContext, useState, useContext } from "react";
-import axios from "axios";
+import axiosInstance from "../api/axiosInstance";
 
 const AuthContext = createContext();
 
@@ -14,10 +14,7 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/auth/login`,
-        { email, password },
-      );
+      const response = await axiosInstance.post("/auth/login", { email, password });
 
       const { token: newToken, user: userData } = response.data;
       setToken(newToken);
@@ -29,7 +26,10 @@ export function AuthProvider({ children }) {
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.error || "Login failed",
+        error:
+          typeof error.response?.data?.error === "string"
+            ? error.response.data.error
+            : "Login failed",
       };
     }
   };
@@ -37,8 +37,8 @@ export function AuthProvider({ children }) {
   const logout = async () => {
     try {
       if (token) {
-        await axios.post(
-          `${import.meta.env.VITE_API_URL}/auth/logout`,
+        await axiosInstance.post(
+          "/auth/logout",
           {},
           {
             headers: { Authorization: `Bearer ${token}` },
